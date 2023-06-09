@@ -3,6 +3,8 @@ package com.in28minutes.business;
 import com.in28minutes.data.api.TodoService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -12,6 +14,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.*;
 
 /***
@@ -26,6 +29,9 @@ public class TodoBusinessImplMockTest {
 
     @Mock
     TodoService todoServiceMock;
+
+    @Captor
+    ArgumentCaptor<String> stringArgumentCaptor;
 
     private TodoBusinessImpl todoBusinessImpl;
 
@@ -59,5 +65,22 @@ public class TodoBusinessImplMockTest {
             // An assert is not that helpful here, because there is no functionality
             // in the .deleteTodo() implementation.
         verify(todoServiceMock, times(1)).deleteTodo("Learn to dance");
+    }
+
+    @Test
+    public void testDeleteTodosNotRelatedToSpringMockUsingBDDArgumentCaptor() {
+        //GIVEN - setup
+        List<String> allTodos = Arrays.asList("Learn to dance", "Learn Spring", "Learn Spring MVC");
+        when(todoServiceMock.retrieveTodos("Eleanor")).thenReturn(allTodos);
+        todoBusinessImpl = new TodoBusinessImpl(todoServiceMock);
+        //WHEN - the actual method call / behaviour being tested
+        todoBusinessImpl.deleteTodosNotRelatedToSpring("Eleanor");
+        //THEN - assertions
+            // This verifies at runtime which value was deleted:
+        verify(todoServiceMock, times(1)).deleteTodo(stringArgumentCaptor.capture());
+            // The same thing using BDD syntax:
+        then(todoServiceMock).should(times(1)).deleteTodo(stringArgumentCaptor.capture());
+            // And asserting that the value is what we expect:
+        assertThat(stringArgumentCaptor.getValue(), is("Learn to dance"));
     }
 }
